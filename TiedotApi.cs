@@ -26,7 +26,7 @@ namespace cryptot_sovellus
                 var URL = new UriBuilder(@"https://api.coingecko.com/api/v3/simple/price?ids=litecoin%2Cethereum%2Cbitcoin&vs_currencies=eur&include_last_updated_at=true");
                 var webClient = new WebClient();
                 var json = webClient.DownloadString(URL.ToString());
-                
+                //hyvä muistaa että macissa nämä kenoviivat menee toisinpäin ja tuo polun hakeminne järjestelmästä ei toimi oikeuksien takia oikein
                // System.IO.File.WriteAllText(@"C:\Users\User\source\repos\cryprtot_sovellus\cryptot_sovellus\tallennus.json", json);
                 System.IO.File.WriteAllText(@historia, json);
                 Console.WriteLine(historia);
