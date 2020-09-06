@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,11 +9,13 @@ using System.Linq.Expressions;
 using System.Text;
 using static cryptot_sovellus.Models.Lataus;
 
+
+
 namespace cryptot_sovellus
 {
     class Kayttoliittyma
     {
-        private static string tallennus = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\tallennus.json";
+        private static string tallennus = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\Tiedostot\\";
         private static string[] KolikotListaus = { "BTC", "LTC", "ETH" };
         private Lompakko lompakko;
         private TiedotApi tiedot;
@@ -107,7 +110,6 @@ namespace cryptot_sovellus
         public void VahennaSaldo()
         {
             if (lompakko.Count() == 0)
-
             {
                 Console.WriteLine(lompakko.ToString());
                 return;
@@ -176,6 +178,7 @@ namespace cryptot_sovellus
                 Console.WriteLine();
                 Console.WriteLine("Lompakon sisältö:");
                 Console.WriteLine("******************************************************");
+                string tulostus = "";
                 foreach (Kolikko kolikko in lompakko)
                 {
                     double hinta = 0.0;
@@ -197,22 +200,42 @@ namespace cryptot_sovellus
                     Console.WriteLine(kolikko.ToString());
                     Console.WriteLine($"Arvo (EUR): " + string.Format("{0:0.00}", hinta * kolikko.Saldo));
                     Console.WriteLine("******************************************************");
+
+                    tulostus = tulostus + kolikko.ToString() + "\n";
+                    var apu = $"Arvo (EUR): " + string.Format("{0:0.00}", hinta * kolikko.Saldo);
+                    tulostus = tulostus + apu + "\n";
+                    tulostus = tulostus + "******************************************************" + "\n";
                 }
                 Console.WriteLine(lompakko.ToString() + string.Format("{0:0.00}", summa));
+                Console.WriteLine();
+                tulostus = tulostus + lompakko.ToString() + string.Format("{0:0.00}", summa);
+                raportitTallennus(tulostus);
+                Console.WriteLine("raportti tallennettu kansioon: " + tallennus);
                 Console.WriteLine();
                 return;
             }
             Console.WriteLine(lompakko.ToString());
             Console.WriteLine();
         }
+        public void raportitTallennus(string tiedosto)
+        {
+            DateTime nyt = DateTime.Now;
+            string otsikko = "lompakon arvo: " + nyt.ToString();
+            string raportti = otsikko + "\n" + tiedosto;
+            string tiedostoNimi = tallennus + "\\raportit\\"+ nyt.ToString() + ".txt";
+            StreamWriter sw = File.CreateText(tiedostoNimi);
+            string tiedostoSisalto = raportti;
+            sw.WriteLine(tiedostoSisalto);
+            sw.Close();
+        }
         public void Tallennus()
         {
             string json = JsonConvert.SerializeObject(lompakko.kolikot.ToArray());
-            System.IO.File.WriteAllText(@tallennus, json);
+            System.IO.File.WriteAllText(@tallennus + "tallennus.json", json);
         }
         public void Lataus()
         {
-            using (StreamReader lukija = new StreamReader(@tallennus))
+            using (StreamReader lukija = new StreamReader(@tallennus + "tallennus.json"))
             {
                 string json = lukija.ReadToEnd();
                 List<MyArray> items = JsonConvert.DeserializeObject<List<MyArray>>(json);

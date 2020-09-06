@@ -19,7 +19,7 @@ namespace cryptot_sovellus
         {
             string workingDirectory = Environment.CurrentDirectory;
             string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
-            string historia = projectDirectory + "\\historia.json";
+            string historia = projectDirectory + "\\Tiedostot\\historia.json";
             try
             {
                
@@ -29,7 +29,7 @@ namespace cryptot_sovellus
                 //hyvä muistaa että macissa nämä kenoviivat menee toisinpäin ja tuo polun hakeminne järjestelmästä ei toimi oikeuksien takia oikein
                // System.IO.File.WriteAllText(@"C:\Users\User\source\repos\cryprtot_sovellus\cryptot_sovellus\tallennus.json", json);
                 System.IO.File.WriteAllText(@historia, json);
-                Console.WriteLine(historia);
+               // Console.WriteLine(historia);
                 var result = JsonConvert.DeserializeObject<Root>(json);
 
                 double BTC = result.bitcoin.eur;
