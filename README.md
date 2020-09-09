@@ -1,4 +1,4 @@
-# cryptot_sovellus
+# crypto-lompakko
 
 
 
