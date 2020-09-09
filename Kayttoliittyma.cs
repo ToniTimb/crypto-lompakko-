@@ -15,6 +15,7 @@ namespace cryptot_sovellus
 {
     class Kayttoliittyma
     {
+        
         private static string tallennus = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\Tiedostot\\";
         private static string[] KolikotListaus = { "BTC", "LTC", "ETH" };
         private Lompakko lompakko;
@@ -75,6 +76,10 @@ namespace cryptot_sovellus
                     {
                         double maara = double.Parse(Kysymys("Lisäys: "));
                         bool osuma = false;
+                        if (maara < 0)
+                        {
+                            throw new System.ArgumentException();
+                        }
 
                         foreach (Kolikko kolikko in lompakko)
                         {
@@ -99,8 +104,9 @@ namespace cryptot_sovellus
                 }
                 catch
                 {
-                    Console.WriteLine("Syöte virheellisessä muodossa");
-                    Console.WriteLine("Muistathan että desimaali eroitin on pilkku");
+                    Console.WriteLine("Syöte virheellisessä muodossa, tarkista alla ilmoitetut seikat:");
+                    Console.WriteLine("Vain positiivisia lukuja");
+                    Console.WriteLine("Desimaali eroitin on pilkku ei piste");
                     Console.WriteLine("Yritä uudelleen");
                     continue;
                 }
@@ -113,68 +119,84 @@ namespace cryptot_sovellus
             {
                 Console.WriteLine(lompakko.ToString());
                 return;
-            }
+            }    
             while (true)
             {
-                string nimi = Kysymys("Kolikon nimi: (BTC, LTC, ETH)");
-                if (KolikotListaus.Contains(nimi))
+                try
                 {
-                    bool tyhja = true;
-                    int indeksi = -1;
-
-                    foreach (Kolikko kolikko in lompakko)
+                    string nimi = Kysymys("Kolikon nimi: (BTC, LTC, ETH)");
+                    if (KolikotListaus.Contains(nimi))
                     {
-                        if (kolikko.Nimi.Equals(nimi.ToUpper()))
+                        bool tyhja = true;
+                        int indeksi = -1;
+
+                        foreach (Kolikko kolikko in lompakko)
                         {
-                            Console.WriteLine($"Kolikon {nimi} saldo on tällä hetkellä {kolikko.Saldo}");
-                            double maara = double.Parse(Kysymys("Vähennys: "));
-                            if (maara >= kolikko.Saldo)
+                            if (kolikko.Nimi.Equals(nimi.ToUpper()))
                             {
-                                kolikko.VahennaS(kolikko.Saldo);
-                                indeksi = lompakko.kolikot.IndexOf(kolikko);
-                                tyhja = true;
+                                Console.WriteLine($"Kolikon {nimi} saldo on tällä hetkellä {kolikko.Saldo}");
+                                double maara = double.Parse(Kysymys("Vähennys: "));
+                                if (maara < 0)
+                                {
+                                    throw new System.ArgumentException();
+                                }
+                                if (maara >= kolikko.Saldo)
+                                {
+                                    kolikko.VahennaS(kolikko.Saldo);
+                                    indeksi = lompakko.kolikot.IndexOf(kolikko);
+                                    tyhja = true;
+                                    break;
+                                }
+                                Console.WriteLine($"Kolikon {nimi} saldo on tämän jälkeen {kolikko.Saldo - maara}");
+                                kolikko.VahennaS(maara);
+                                tyhja = false;
+                                indeksi = -1;
                                 break;
                             }
-                            Console.WriteLine($"Kolikon {nimi} saldo on tämän jälkeen {kolikko.Saldo - maara}");
-                            kolikko.VahennaS(maara);
-                            tyhja = false;
-                            indeksi = -1;
-                            break;
+                        }
+                        if (indeksi != -1)
+                        {
+                            var poistettava = lompakko.kolikot[indeksi];
+                            lompakko.kolikot.Remove(poistettava);
+                            Console.WriteLine(indeksi);
+                            Console.WriteLine("******************************************************");
+                            Console.WriteLine($"Kolikon {nimi} saldo on nolla");
+                            Console.WriteLine("******************************************************");
+                        }
+                        else if (tyhja)
+                        {
+                            Console.WriteLine("******************************************************");
+                            Console.WriteLine($"Kolikkoa {nimi} ei ole lompakossa");
+                            Console.WriteLine("******************************************************");
                         }
                     }
-                    if (indeksi != -1)
+                    else
                     {
-                        var poistettava = lompakko.kolikot[indeksi];
-                        lompakko.kolikot.Remove(poistettava);
-                        Console.WriteLine(indeksi);
-                        Console.WriteLine("******************************************************");
-                        Console.WriteLine($"Kolikon {nimi} saldo on nolla");
-                        Console.WriteLine("******************************************************");
+                        Console.WriteLine($"Valinta {nimi} ei ole tuettu, yritä uudelleen");
+                        continue;
                     }
-                    else if (tyhja)
-                    {
-                        Console.WriteLine("******************************************************");
-                        Console.WriteLine($"Kolikkoa {nimi} ei ole lompakossa");
-                        Console.WriteLine("******************************************************");
-                    }
-                }
-                else
+                    Console.WriteLine();
+                    break;
+                }catch
                 {
-                    Console.WriteLine($"Valinta {nimi} ei ole tuettu, yritä uudelleen");
+                    Console.WriteLine("Syöte virheellisessä muodossa, tarkista alla ilmoitetut seikat:");
+                    Console.WriteLine("Vain positiivisia lukuja");
+                    Console.WriteLine("Desimaali eroitin on pilkku ei piste");
+                    Console.WriteLine("Yritä uudelleen");
                     continue;
                 }
-                Console.WriteLine();
-                break;
             }
+            
         }
         public void LompakonArvo()
         {
             double summa = 0.0;
             int sisalto = lompakko.Count();
+            
 
             if (sisalto != 0)
             {
-                Tuple<double, double, double> HintaTuple = tiedot.CoinGeckoHinnat();
+                Tuple<double, double, double,bool> HintaTuple = tiedot.CoinGeckoHinnat();
                 Console.WriteLine();
                 Console.WriteLine("Lompakon sisältö:");
                 Console.WriteLine("******************************************************");
@@ -209,9 +231,14 @@ namespace cryptot_sovellus
                 Console.WriteLine(lompakko.ToString() + string.Format("{0:0.00}", summa));
                 Console.WriteLine();
                 tulostus = tulostus + lompakko.ToString() + string.Format("{0:0.00}", summa);
-                raportitTallennus(tulostus);
-                Console.WriteLine("raportti tallennettu kansioon: " + tallennus);
-                Console.WriteLine();
+
+                if (HintaTuple.Item4)
+                {
+                    raportitTallennus(tulostus);
+                    Console.WriteLine("raportti tallennettu kansioon: " + tallennus);
+                    Console.WriteLine();
+                }
+                
                 return;
             }
             Console.WriteLine(lompakko.ToString());

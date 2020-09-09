@@ -10,19 +10,19 @@ using static cryptot_sovellus.Luokat;
 using System.IO;
 
 namespace cryptot_sovellus
-{
-   
+{   
     class TiedotApi
     {
-        
-        public Tuple<double, double, double> CoinGeckoHinnat()
+        private static string historia = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\Tiedostot\\historia.json";
+        public Tuple<double, double, double,bool> CoinGeckoHinnat()
         {
-            string workingDirectory = Environment.CurrentDirectory;
-            string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
-            string historia = projectDirectory + "\\Tiedostot\\historia.json";
+            bool linjoilla = false;
+
+           // string workingDirectory = Environment.CurrentDirectory;
+           // string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+          //  string historia = projectDirectory + "\\Tiedostot\\historia.json";
             try
-            {
-               
+            {           
                 var URL = new UriBuilder(@"https://api.coingecko.com/api/v3/simple/price?ids=litecoin%2Cethereum%2Cbitcoin&vs_currencies=eur&include_last_updated_at=true");
                 var webClient = new WebClient();
                 var json = webClient.DownloadString(URL.ToString());
@@ -31,10 +31,11 @@ namespace cryptot_sovellus
                 System.IO.File.WriteAllText(@historia, json);
                // Console.WriteLine(historia);
                 var result = JsonConvert.DeserializeObject<Root>(json);
-
+               
                 double BTC = result.bitcoin.eur;
                 double LTC = result.litecoin.eur;
                 double ETHEREUM = result.ethereum.eur;
+                linjoilla = true;
 
                 /* testataan että onko selkeämpää että päiväys näkyy vain kun on käytössä paikallisesti tallennettu tieto
                 DateTimeOffset tiedotPaivitettyBTC = DateTimeOffset.FromUnixTimeSeconds(result.bitcoin.last_updated_at);
@@ -46,7 +47,7 @@ namespace cryptot_sovellus
                 Console.WriteLine(" ETH hinta päivitetty {0}", tiedotPaivitettyETH);
                  Console.WriteLine("******************************************************");*/
 
-                var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM);
+                var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM,linjoilla);
                 return HinnatTuple;
             }
             catch
@@ -69,7 +70,7 @@ namespace cryptot_sovellus
                     Console.WriteLine(" ETH hinta päivitetty {0}", tiedotPaivitettyETH);
                     Console.WriteLine("******************************************************");
 
-                    var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM);
+                    var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM,linjoilla);
                     return HinnatTuple;
                 }
             }
