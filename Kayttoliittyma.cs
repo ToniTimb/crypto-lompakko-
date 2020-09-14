@@ -1,12 +1,9 @@
 ﻿
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using static cryptot_sovellus.Models.Lataus;
 
 
@@ -15,9 +12,13 @@ namespace cryptot_sovellus
 {
     class Kayttoliittyma
     {
-        
-        private static string tallennus = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\Tiedostot\\";
+        private static string tiedostotPolku = Path.Combine(Directory.GetCurrentDirectory(), "Tiedostot");
+        private static string tallennusPolku = Path.Combine(Directory.GetCurrentDirectory(), "Tiedostot", "tallennus.json");
+        private static string raportointiPolku = Path.Combine(Directory.GetCurrentDirectory(), "Tiedostot", "raportit");
+
+
         private static string[] KolikotListaus = { "BTC", "LTC", "ETH" };
+
         private Lompakko lompakko;
         private TiedotApi tiedot;
         public Kayttoliittyma(Lompakko lompakko, TiedotApi tiedot)
@@ -27,6 +28,7 @@ namespace cryptot_sovellus
         }
         public void kaynnista()
         {
+            Alustus();
             Lataus();
             while (true)
             {
@@ -119,7 +121,7 @@ namespace cryptot_sovellus
             {
                 Console.WriteLine(lompakko.ToString());
                 return;
-            }    
+            }
             while (true)
             {
                 try
@@ -159,15 +161,15 @@ namespace cryptot_sovellus
                             var poistettava = lompakko.kolikot[indeksi];
                             lompakko.kolikot.Remove(poistettava);
                             Console.WriteLine(indeksi);
-                            Console.WriteLine("******************************************************");
+                            Console.WriteLine(new string('-', 40));
                             Console.WriteLine($"Kolikon {nimi} saldo on nolla");
-                            Console.WriteLine("******************************************************");
+                            Console.WriteLine(new string('-', 40));
                         }
                         else if (tyhja)
                         {
-                            Console.WriteLine("******************************************************");
+                            Console.WriteLine(new string('-', 40));
                             Console.WriteLine($"Kolikkoa {nimi} ei ole lompakossa");
-                            Console.WriteLine("******************************************************");
+                            Console.WriteLine(new string('-', 40));
                         }
                     }
                     else
@@ -177,7 +179,8 @@ namespace cryptot_sovellus
                     }
                     Console.WriteLine();
                     break;
-                }catch
+                }
+                catch
                 {
                     Console.WriteLine("Syöte virheellisessä muodossa, tarkista alla ilmoitetut seikat:");
                     Console.WriteLine("Vain positiivisia lukuja");
@@ -186,20 +189,18 @@ namespace cryptot_sovellus
                     continue;
                 }
             }
-            
         }
         public void LompakonArvo()
         {
             double summa = 0.0;
             int sisalto = lompakko.Count();
-            
 
             if (sisalto != 0)
             {
-                Tuple<double, double, double,bool> HintaTuple = tiedot.CoinGeckoHinnat();
+                Tuple<double, double, double, bool> HintaTuple = tiedot.CoinGeckoHinnat();
                 Console.WriteLine();
                 Console.WriteLine("Lompakon sisältö:");
-                Console.WriteLine("******************************************************");
+                Console.WriteLine(new string('-', 40));
                 string tulostus = "";
                 foreach (Kolikko kolikko in lompakko)
                 {
@@ -221,12 +222,12 @@ namespace cryptot_sovellus
                     }
                     Console.WriteLine(kolikko.ToString());
                     Console.WriteLine($"Arvo (EUR): " + string.Format("{0:0.00}", hinta * kolikko.Saldo));
-                    Console.WriteLine("******************************************************");
+                    Console.WriteLine(new string('-', 40));
 
                     tulostus = tulostus + kolikko.ToString() + "\n";
                     var apu = $"Arvo (EUR): " + string.Format("{0:0.00}", hinta * kolikko.Saldo);
                     tulostus = tulostus + apu + "\n";
-                    tulostus = tulostus + "******************************************************" + "\n";
+                    tulostus = tulostus + new string('-', 40) + "\n";
                 }
                 Console.WriteLine(lompakko.ToString() + string.Format("{0:0.00}", summa));
                 Console.WriteLine();
@@ -235,10 +236,9 @@ namespace cryptot_sovellus
                 if (HintaTuple.Item4)
                 {
                     raportitTallennus(tulostus);
-                    Console.WriteLine("raportti tallennettu kansioon: " + tallennus);
+                    Console.WriteLine("raportti tallennettu kansioon: " + raportointiPolku);
                     Console.WriteLine();
                 }
-                
                 return;
             }
             Console.WriteLine(lompakko.ToString());
@@ -247,10 +247,12 @@ namespace cryptot_sovellus
         public void raportitTallennus(string tiedosto)
         {
             DateTime nyt = DateTime.Now;
-            string otsikko = "lompakon arvo: " + nyt.ToString();
+            string otsikko = "lompakon arvo: " + nyt.ToString() + "\n" + new string('-', 40);
             string raportti = otsikko + "\n" + tiedosto;
-            string tiedostoNimi = tallennus + "\\raportit\\"+ nyt.ToString() + ".txt";
-            StreamWriter sw = File.CreateText(tiedostoNimi);
+            string tiedostoNimi = nyt.ToString() + ".txt";
+            string raporttiTiedosto = Path.Combine(raportointiPolku, tiedostoNimi);
+
+            StreamWriter sw = File.CreateText(raporttiTiedosto);
             string tiedostoSisalto = raportti;
             sw.WriteLine(tiedostoSisalto);
             sw.Close();
@@ -258,14 +260,19 @@ namespace cryptot_sovellus
         public void Tallennus()
         {
             string json = JsonConvert.SerializeObject(lompakko.kolikot.ToArray());
-            System.IO.File.WriteAllText(@tallennus + "tallennus.json", json);
+            System.IO.File.WriteAllText(tallennusPolku, json);
         }
         public void Lataus()
         {
-            using (StreamReader lukija = new StreamReader(@tallennus + "tallennus.json"))
+            using (StreamReader lukija = new StreamReader(@tallennusPolku))
             {
                 string json = lukija.ReadToEnd();
+
                 List<MyArray> items = JsonConvert.DeserializeObject<List<MyArray>>(json);
+                if (items == null)
+                {
+                    return;
+                }
                 foreach (MyArray item in items)
                 {
                     lompakko.LisaaK(item.Nimi, item.Saldo);
@@ -276,6 +283,19 @@ namespace cryptot_sovellus
         {
             lompakko.kolikot.Clear();
             Tallennus();
+        }
+        public void Alustus()
+        {
+            if (!Directory.Exists(raportointiPolku))
+            {
+                Directory.CreateDirectory(raportointiPolku);
+            }
+            if (!File.Exists(tallennusPolku))
+            {
+                StreamWriter sw = File.CreateText(tallennusPolku);
+                sw.WriteLine("");
+                sw.Close();
+            }
         }
     }
 }

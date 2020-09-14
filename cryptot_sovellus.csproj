@@ -9,17 +9,16 @@
 
   <ItemGroup>
     <Compile Remove="Backup\**" />
+    <Compile Remove="Tiedostot\**" />
     <EmbeddedResource Remove="Backup\**" />
+    <EmbeddedResource Remove="Tiedostot\**" />
     <None Remove="Backup\**" />
+    <None Remove="Tiedostot\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="itext7" Version="7.1.12" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Tiedostot\raportit\" />
   </ItemGroup>
 
 </Project>

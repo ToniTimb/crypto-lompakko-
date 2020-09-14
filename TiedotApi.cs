@@ -10,68 +10,62 @@ using static cryptot_sovellus.Luokat;
 using System.IO;
 
 namespace cryptot_sovellus
-{   
+{
     class TiedotApi
     {
-        private static string historia = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName + "\\Tiedostot\\historia.json";
-        public Tuple<double, double, double,bool> CoinGeckoHinnat()
+        private static string historia = Path.Combine(Directory.GetCurrentDirectory(), "Tiedostot", "historia.json");
+        public Tuple<double, double, double, bool> CoinGeckoHinnat()
         {
             bool linjoilla = false;
-
-           // string workingDirectory = Environment.CurrentDirectory;
-           // string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
-          //  string historia = projectDirectory + "\\Tiedostot\\historia.json";
             try
-            {           
+            {
+
                 var URL = new UriBuilder(@"https://api.coingecko.com/api/v3/simple/price?ids=litecoin%2Cethereum%2Cbitcoin&vs_currencies=eur&include_last_updated_at=true");
                 var webClient = new WebClient();
                 var json = webClient.DownloadString(URL.ToString());
-                //hyvä muistaa että macissa nämä kenoviivat menee toisinpäin ja tuo polun hakeminne järjestelmästä ei toimi oikeuksien takia oikein
-               // System.IO.File.WriteAllText(@"C:\Users\User\source\repos\cryprtot_sovellus\cryptot_sovellus\tallennus.json", json);
                 System.IO.File.WriteAllText(@historia, json);
-               // Console.WriteLine(historia);
                 var result = JsonConvert.DeserializeObject<Root>(json);
-               
+
                 double BTC = result.bitcoin.eur;
                 double LTC = result.litecoin.eur;
                 double ETHEREUM = result.ethereum.eur;
                 linjoilla = true;
 
-                /* testataan että onko selkeämpää että päiväys näkyy vain kun on käytössä paikallisesti tallennettu tieto
-                DateTimeOffset tiedotPaivitettyBTC = DateTimeOffset.FromUnixTimeSeconds(result.bitcoin.last_updated_at);
-                DateTimeOffset tiedotPaivitettyLTC = DateTimeOffset.FromUnixTimeSeconds(result.litecoin.last_updated_at);
-                DateTimeOffset tiedotPaivitettyETH = DateTimeOffset.FromUnixTimeSeconds(result.ethereum.last_updated_at);
-                 Console.WriteLine("******************************************************");
-                Console.WriteLine(" BTC hinta päivitetty {0}", tiedotPaivitettyBTC);
-                Console.WriteLine(" LTC hinta päivitetty {0}", tiedotPaivitettyLTC);
-                Console.WriteLine(" ETH hinta päivitetty {0}", tiedotPaivitettyETH);
-                 Console.WriteLine("******************************************************");*/
-
-                var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM,linjoilla);
+                var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM, linjoilla);
                 return HinnatTuple;
             }
             catch
             {
-                using (StreamReader lukija = new StreamReader(@historia))
+                if (!File.Exists(historia))
                 {
-                    string json = lukija.ReadToEnd();
-                    var result = JsonConvert.DeserializeObject<Root>(json);
+                    Console.WriteLine();
+                    Console.WriteLine("HUOM! Ei yhteyttä coingeckon apiin. Aiempia hintoja ei käytettävissä, joten arvoa ei voida laskea.");
 
-                    double BTC = result.bitcoin.eur;
-                    DateTimeOffset tiedotPaivitettyBTC = DateTimeOffset.FromUnixTimeSeconds(result.bitcoin.last_updated_at);
-                    double LTC = result.litecoin.eur;
-                    DateTimeOffset tiedotPaivitettyLTC = DateTimeOffset.FromUnixTimeSeconds(result.litecoin.last_updated_at);
-                    double ETHEREUM = result.ethereum.eur;
-                    DateTimeOffset tiedotPaivitettyETH = DateTimeOffset.FromUnixTimeSeconds(result.ethereum.last_updated_at);
-                    Console.WriteLine("******************************************************");
-                    Console.WriteLine(" HUOM! vanhat hinnat");
-                    Console.WriteLine(" BTC hinta päivitetty {0}", tiedotPaivitettyBTC);
-                    Console.WriteLine(" LTC hinta päivitetty {0}", tiedotPaivitettyLTC);
-                    Console.WriteLine(" ETH hinta päivitetty {0}", tiedotPaivitettyETH);
-                    Console.WriteLine("******************************************************");
+                    return Tuple.Create(0.0, 0.0, 0.0, linjoilla);
+                }
+                else
+                {
+                    using (StreamReader lukija = new StreamReader(@historia))
+                    {
+                        string json = lukija.ReadToEnd();
+                        var result = JsonConvert.DeserializeObject<Root>(json);
 
-                    var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM,linjoilla);
-                    return HinnatTuple;
+                        double BTC = result.bitcoin.eur;
+                        DateTimeOffset tiedotPaivitettyBTC = DateTimeOffset.FromUnixTimeSeconds(result.bitcoin.last_updated_at);
+                        double LTC = result.litecoin.eur;
+                        DateTimeOffset tiedotPaivitettyLTC = DateTimeOffset.FromUnixTimeSeconds(result.litecoin.last_updated_at);
+                        double ETHEREUM = result.ethereum.eur;
+                        DateTimeOffset tiedotPaivitettyETH = DateTimeOffset.FromUnixTimeSeconds(result.ethereum.last_updated_at);
+                        Console.WriteLine(new string('-', 40));
+                        Console.WriteLine(" HUOM! vanhat hinnat");
+                        Console.WriteLine(" BTC hinta päivitetty {0}", tiedotPaivitettyBTC.ToLocalTime());
+                        Console.WriteLine(" LTC hinta päivitetty {0}", tiedotPaivitettyLTC.ToLocalTime());
+                        Console.WriteLine(" ETH hinta päivitetty {0}", tiedotPaivitettyETH.ToLocalTime());
+                        Console.WriteLine(new string('-', 40));
+
+                        var HinnatTuple = Tuple.Create(BTC, LTC, ETHEREUM, linjoilla);
+                        return HinnatTuple;
+                    }
                 }
             }
         }

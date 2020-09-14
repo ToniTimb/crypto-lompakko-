@@ -6,6 +6,7 @@ namespace cryptot_sovellus
     {
         static void Main(string[] args)
         {   
+
             Lompakko lompakko = new Lompakko();
             TiedotApi tiedot = new TiedotApi();
             Kayttoliittyma kayttoliittyma = new Kayttoliittyma(lompakko, tiedot);
